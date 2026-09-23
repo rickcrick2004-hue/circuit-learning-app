@@ -846,4 +846,1700 @@
 
     </script>
 </body>
+</html><!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直列・並列回路 電流・電圧学習アプリ</title>
+    <!-- Tailwind CSSの読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* カスタムフォントとベーススタイル */
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap');
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #f0fdf4; /* 薄い緑色の背景 */
+            color: #333;
+        }
+        /* キャンバスのスタイル */
+        #circuitCanvas {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            /* タッチデバイスでのスクロール防止 */
+            touch-action: none; 
+            max-width: 100%;
+            height: auto;
+        }
+        /* ボタンのホバーエフェクト */
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* アニメーション用クラス */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen items-center p-4">
+
+    <header class="w-full max-w-4xl text-center mb-6 fade-in">
+        <h1 class="text-4xl md:text-5xl font-bold text-green-700 mb-2">⚡️ 電流・電圧 マスターアプリ ⚡️</h1>
+        <p class="text-lg md:text-xl text-gray-600">回路の謎を解き明かそう！「？」の数字はいくつかな？</p>
+    </header>
+
+    <main class="w-full max-w-4xl bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center fade-in">
+        
+        <!-- コントロールパネル -->
+        <div class="flex flex-col items-center gap-6 mb-4 w-full">
+            <div class="flex flex-wrap justify-center gap-8 w-full">
+                <!-- 回路種類切り替えタブ -->
+                <div class="flex bg-gray-200 rounded-full p-1 shadow-inner items-center">
+                    <button id="btnSeries" class="px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-blue-500 text-white shadow-md transform scale-105">
+                        直列回路
+                    </button>
+                    <button id="btnParallel" class="px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300">
+                        並列回路
+                    </button>
+                </div>
+
+                <!-- モード切り替えタブ -->
+                <div class="flex bg-gray-200 rounded-full p-1 shadow-inner items-center">
+                    <button id="btnModeCurrent" class="px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-orange-500 text-white shadow-md transform scale-105">
+                        電流モード
+                    </button>
+                    <button id="btnModeVoltage" class="px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300">
+                        電圧モード
+                    </button>
+                </div>
+            </div>
+
+            <button id="btnGenerate" class="px-8 py-3 bg-green-500 text-white text-xl font-bold rounded-full btn-hover transition duration-300 shadow-md flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                問題を変える
+            </button>
+        </div>
+
+        <!-- ランダム出題モード -->
+        <div class="flex flex-col items-center mb-6 w-full fade-in border-t border-gray-200 pt-4">
+            <span class="text-sm font-bold text-gray-500 mb-3">＼ ランダム出題モード ／</span>
+            <div class="flex flex-wrap justify-center gap-4 w-full">
+                <button id="btnRandCurrent" class="px-4 py-2 bg-orange-100 text-orange-700 font-bold rounded-xl btn-hover transition duration-300 shadow border-2 border-orange-300">
+                    電流ランダム
+                </button>
+                <button id="btnRandVoltage" class="px-4 py-2 bg-purple-100 text-purple-700 font-bold rounded-xl btn-hover transition duration-300 shadow border-2 border-purple-300">
+                    電圧ランダム
+                </button>
+                <button id="btnRandAll" class="px-4 py-2 bg-pink-100 text-pink-700 font-bold rounded-xl btn-hover transition duration-300 shadow border-2 border-pink-300">
+                    電流・電圧ランダム
+                </button>
+            </div>
+        </div>
+
+        <!-- 豆電球3個モード トグルスイッチ -->
+        <div class="flex items-center justify-center gap-3 mb-6 w-full fade-in">
+            <span class="text-lg font-bold text-gray-700">豆電球3個モード:</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle3Bulbs" class="sr-only peer">
+                <div class="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+            </label>
+            <span class="text-lg font-bold text-gray-500 w-12" id="toggle3BulbsText">OFF</span>
+        </div>
+
+        <!-- 状態表示テキスト -->
+        <div id="statusText" class="text-2xl font-bold text-gray-700 mb-4 h-8">
+            直列回路の電流を計算しよう！
+        </div>
+
+        <div class="relative w-full flex justify-center overflow-hidden">
+            <!-- キャンバスの論理サイズを大きめに設定し、CSSでレスポンシブに縮小表示させる -->
+            <canvas id="circuitCanvas" width="800" height="600" class="w-full max-w-[800px] border-4 border-gray-200"></canvas>
+            
+            <!-- 正解表示用のオーバーレイ（初期非表示） -->
+            <div id="answerOverlay" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 hidden rounded-xl flex-col z-10">
+                <div class="text-6xl font-bold text-red-600 mb-4 animate-bounce">正解！🎉</div>
+                <div id="answerDetail" class="text-3xl text-gray-800 font-bold mb-6 text-center"></div>
+                <button id="btnCloseOverlay" class="px-8 py-4 bg-gray-600 text-white text-2xl font-bold rounded-full hover:bg-gray-700 transition duration-300 shadow-lg">
+                    閉じる
+                </button>
+            </div>
+        </div>
+
+        <!-- 答え合わせセクション -->
+        <div class="mt-8 flex flex-col items-center w-full bg-blue-50 p-6 rounded-xl border-2 border-blue-200">
+            <h2 class="text-2xl font-bold text-blue-800 mb-4">「？」に入る数字は？</h2>
+            <div class="flex items-center gap-4">
+                <input type="number" id="inputAnswer" class="w-32 h-16 text-3xl text-center border-4 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="0" step="0.1">
+                <span id="unitText" class="text-3xl font-bold text-gray-700">A</span>
+                <button id="btnCheck" class="px-8 py-4 bg-red-500 text-white text-2xl font-bold rounded-xl btn-hover transition duration-300 shadow-lg ml-4">
+                    こたえあわせ
+                </button>
+            </div>
+            <p id="feedbackText" class="mt-4 text-xl font-bold h-8 text-red-500"></p>
+        </div>
+
+    </main>
+
+    <footer class="mt-8 text-gray-500 text-sm">
+        &copy; 2026 Science Class Circuit App
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('circuitCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // UI要素の取得
+        const btnSeries = document.getElementById('btnSeries');
+        const btnParallel = document.getElementById('btnParallel');
+        const btnModeCurrent = document.getElementById('btnModeCurrent');
+        const btnModeVoltage = document.getElementById('btnModeVoltage');
+        const btnGenerate = document.getElementById('btnGenerate');
+        const btnRandCurrent = document.getElementById('btnRandCurrent');
+        const btnRandVoltage = document.getElementById('btnRandVoltage');
+        const btnRandAll = document.getElementById('btnRandAll');
+        const btnCheck = document.getElementById('btnCheck');
+        const inputAnswer = document.getElementById('inputAnswer');
+        const statusText = document.getElementById('statusText');
+        const unitText = document.getElementById('unitText');
+        const feedbackText = document.getElementById('feedbackText');
+        const answerOverlay = document.getElementById('answerOverlay');
+        const answerDetail = document.getElementById('answerDetail');
+        const btnCloseOverlay = document.getElementById('btnCloseOverlay');
+        const toggle3Bulbs = document.getElementById('toggle3Bulbs');
+        const toggle3BulbsText = document.getElementById('toggle3BulbsText');
+
+        // アプリケーションの状態
+        let state = {
+            isSeries: true,       // true: 直列, false: 並列
+            isCurrentMode: true,  // true: 電流モード, false: 電圧モード
+            allow3Bulbs: false,   // true: 3個モードON, false: 2個固定
+            bulbCount: 2,         // 豆電球の数 (2 or 3)
+            values: {             // 現在の問題の数値データ
+                vTotal: 0, v1: 0, v2: 0, v3: 0, // 電圧
+                iTotal: 0, i1: 0, i2: 0, i3: 0  // 電流
+            },
+            questionTarget: '',   // 'total', '1', '2', '3' のどれが？になるか
+            answerValue: 0        // ユーザーが答えるべき正解の値
+        };
+
+        // 描画用の設定パラメータ
+        const style = {
+            lineW: 4,             // 導線の太さ
+            lineColor: '#334155', // 導線の色(slate-700)
+            pointR: 6,            // 電流を示す点の半径
+            pointColor: '#ef4444',// 点の色(red-500)
+            font: 'bold 24px "M PLUS Rounded 1c", sans-serif',
+            textColor: '#1e293b', // 文字色
+            boxBg: '#ffffff',     // 値表示枠の背景
+            boxBorder: '#94a3b8', // 値表示枠の枠線
+            qBoxBg: '#fef08a',    // 「？」枠の背景色(yellow-200)
+            qBoxBorder: '#eab308' // 「？」枠の枠線色(yellow-500)
+        };
+
+        // 回路の種類とモードに応じてランダムな数値を生成する
+        function generateProblem() {
+            // 初期化
+            inputAnswer.value = '';
+            feedbackText.textContent = '';
+            
+            // トグルの状態によって2個か3個かを設定
+            if (state.allow3Bulbs) {
+                state.bulbCount = Math.random() < 0.5 ? 2 : 3;
+            } else {
+                state.bulbCount = 2;
+            }
+            
+            if (state.isSeries) {
+                // --- 直列回路 ---
+                state.values.iTotal = (Math.floor(Math.random() * 5) + 1) * 0.1;
+                state.values.iTotal = Math.round(state.values.iTotal * 10) / 10; 
+                state.values.i1 = state.values.iTotal;
+                state.values.i2 = state.values.iTotal;
+                state.values.i3 = state.values.iTotal;
+
+                if (state.bulbCount === 2) {
+                    const baseVolts = [0.5, 1.0, 1.5, 2.0];
+                    const bV = baseVolts[Math.floor(Math.random() * baseVolts.length)];
+                    const rRatioChoices = [[1, 1], [1, 2], [2, 1], [1, 3], [3, 1]];
+                    const ratio = rRatioChoices[Math.floor(Math.random() * rRatioChoices.length)];
+                    state.values.v1 = bV * ratio[0];
+                    state.values.v2 = bV * ratio[1];
+                    state.values.vTotal = state.values.v1 + state.values.v2;
+                } else {
+                    // 3個直列
+                    const vList = [1.0, 1.5, 2.0, 3.0];
+                    state.values.v1 = vList[Math.floor(Math.random() * vList.length)];
+                    state.values.v2 = vList[Math.floor(Math.random() * vList.length)];
+                    state.values.v3 = vList[Math.floor(Math.random() * vList.length)];
+                    state.values.vTotal = state.values.v1 + state.values.v2 + state.values.v3;
+                }
+                state.values.vTotal = Math.round(state.values.vTotal * 10) / 10;
+
+            } else {
+                // --- 並列回路 ---
+                const volts = [1.5, 3.0, 4.5, 6.0];
+                state.values.vTotal = volts[Math.floor(Math.random() * volts.length)];
+                
+                if (state.bulbCount === 2) {
+                    state.values.v1 = state.values.vTotal;
+                    state.values.v2 = state.values.vTotal;
+
+                    const baseAmps = [0.1, 0.2, 0.3];
+                    const bA = baseAmps[Math.floor(Math.random() * baseAmps.length)];
+                    const rRatioChoices = [[1, 1], [1, 2], [2, 1]];
+                    const ratio = rRatioChoices[Math.floor(Math.random() * rRatioChoices.length)];
+                    
+                    state.values.i1 = bA * ratio[1];
+                    state.values.i1 = Math.round(state.values.i1 * 10) / 10;
+                    state.values.i2 = bA * ratio[0];
+                    state.values.i2 = Math.round(state.values.i2 * 10) / 10;
+                    state.values.iTotal = Math.round((state.values.i1 + state.values.i2) * 10) / 10;
+                } else {
+                    // 並列3個 (上枝にア(1)、下枝にイ(2)とウ(3))
+                    state.values.v1 = state.values.vTotal; // 上枝
+                    
+                    // 下枝の分圧
+                    const splitRatios = [[1, 1], [1, 2], [2, 1]];
+                    const ratio = splitRatios[Math.floor(Math.random() * splitRatios.length)];
+                    const unitV = state.values.vTotal / (ratio[0] + ratio[1]);
+                    state.values.v2 = Math.round(unitV * ratio[0] * 10) / 10;
+                    state.values.v3 = Math.round(unitV * ratio[1] * 10) / 10;
+
+                    // 電流
+                    const bA = [0.1, 0.2, 0.3, 0.4];
+                    state.values.i1 = bA[Math.floor(Math.random() * bA.length)]; // 上枝電流
+                    state.values.i2 = bA[Math.floor(Math.random() * 2) + 1];     // 下枝電流
+                    state.values.i3 = state.values.i2;
+                    state.values.iTotal = Math.round((state.values.i1 + state.values.i2) * 10) / 10;
+                }
+            }
+
+            // どこを「？」にするかを決定
+            const targets = state.bulbCount === 2 ? ['total', '1', '2'] : ['total', '1', '2', '3'];
+            state.questionTarget = targets[Math.floor(Math.random() * targets.length)];
+
+            // 正解の値を設定し、UIを更新
+            if (state.isCurrentMode) {
+                if (state.questionTarget === 'total') state.answerValue = state.values.iTotal;
+                else if (state.questionTarget === '1') state.answerValue = state.values.i1;
+                else if (state.questionTarget === '2') state.answerValue = state.values.i2;
+                else if (state.questionTarget === '3') state.answerValue = state.values.i3;
+                unitText.textContent = 'A';
+                statusText.textContent = `${state.isSeries ? '直列' : '並列'}回路の 電流 を計算しよう！`;
+            } else {
+                if (state.questionTarget === 'total') state.answerValue = state.values.vTotal;
+                else if (state.questionTarget === '1') state.answerValue = state.values.v1;
+                else if (state.questionTarget === '2') state.answerValue = state.values.v2;
+                else if (state.questionTarget === '3') state.answerValue = state.values.v3;
+                unitText.textContent = 'V';
+                statusText.textContent = `${state.isSeries ? '直列' : '並列'}回路の 電圧 を計算しよう！`;
+            }
+
+            draw(); // キャンバスの再描画
+        }
+
+        // 丸角の四角形を描画する関数（背景付きテキスト用）
+        function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) {
+                ctx.fillStyle = fill;
+                ctx.fill();
+            }
+            if (stroke) {
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        // 引き出し線付きのテキストボックスを描画する関数
+        // pointX, pointY: 回路上の点（または区間の中心）
+        // offsetX, offsetY: 点からの相対的な配置位置
+        function drawCallout(text, pointX, pointY, offsetX, offsetY, isQuestion) {
+            const boxX = pointX + offsetX;
+            const boxY = pointY + offsetY;
+            
+            // テキストのサイズを測る
+            ctx.font = style.font;
+            const textMetrics = ctx.measureText(text);
+            const textWidth = textMetrics.width;
+            
+            // ボックスのサイズと位置（テキストを中央配置）
+            const paddingX = 15;
+            const paddingY = 10;
+            const boxW = textWidth + paddingX * 2;
+            const boxH = 40;
+            const bX = boxX - boxW / 2;
+            const bY = boxY - boxH / 2;
+
+            // 1. 引き出し線を描画
+            ctx.beginPath();
+            ctx.moveTo(pointX, pointY);
+            // 点とボックスの中心を結ぶ
+            ctx.lineTo(boxX, boxY);
+            ctx.strokeStyle = '#64748b'; // slate-500
+            ctx.lineWidth = 2;
+            // 破線にする（見やすくするため）
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]); // 破線リセット
+
+            // 2. 点を描画（電流モードなど、特定の点を示す場合）
+            // 電圧の矢印の起点の時は描かないなどの制御が必要だが、
+            // ここでは呼ばれたら基本点も打つ仕様にする（引数で制御も可）
+            ctx.beginPath();
+            ctx.arc(pointX, pointY, style.pointR, 0, Math.PI * 2);
+            ctx.fillStyle = style.pointColor;
+            ctx.fill();
+
+            // 3. ボックスを描画
+            const bg = isQuestion ? style.qBoxBg : style.boxBg;
+            const border = isQuestion ? style.qBoxBorder : style.boxBorder;
+            roundRect(ctx, bX, bY, boxW, boxH, 8, bg, border);
+
+            // 4. テキストを描画
+            ctx.fillStyle = isQuestion ? '#b45309' : style.textColor; // ?は濃い黄色テキスト
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, boxX, boxY);
+        }
+
+        // 電圧測定用の区間を示す矢印を描画する関数
+        function drawVoltageArrow(circuitSx, circuitSy, circuitEx, circuitEy, arrowDistX, arrowDistY, label, isQuestion) {
+            const arrowSx = circuitSx + arrowDistX;
+            const arrowSy = circuitSy + arrowDistY;
+            const arrowEx = circuitEx + arrowDistX;
+            const arrowEy = circuitEy + arrowDistY;
+            
+            // 補助線（回路から矢印までのガイドライン）
+            ctx.beginPath();
+            ctx.moveTo(circuitSx, circuitSy); ctx.lineTo(arrowSx, arrowSy);
+            ctx.moveTo(circuitEx, circuitEy); ctx.lineTo(arrowEx, arrowEy);
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.stroke();
+
+            // 矢印の主線
+            ctx.beginPath();
+            ctx.moveTo(arrowSx, arrowSy);
+            ctx.lineTo(arrowEx, arrowEy);
+            ctx.strokeStyle = '#3b82f6'; // blue-500
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // 矢印の頭（両端）
+            const headlen = 10;
+            const angle = Math.atan2(arrowEy - arrowSy, arrowEx - arrowSx);
+            
+            ctx.beginPath();
+            ctx.moveTo(arrowSx, arrowSy);
+            ctx.lineTo(arrowSx + headlen * Math.cos(angle + Math.PI/6), arrowSy + headlen * Math.sin(angle + Math.PI/6));
+            ctx.moveTo(arrowSx, arrowSy);
+            ctx.lineTo(arrowSx + headlen * Math.cos(angle - Math.PI/6), arrowSy + headlen * Math.sin(angle - Math.PI/6));
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(arrowEx, arrowEy);
+            ctx.lineTo(arrowEx - headlen * Math.cos(angle - Math.PI/6), arrowEy - headlen * Math.sin(angle - Math.PI/6));
+            ctx.moveTo(arrowEx, arrowEy);
+            ctx.lineTo(arrowEx - headlen * Math.cos(angle + Math.PI/6), arrowEy - headlen * Math.sin(angle + Math.PI/6));
+            ctx.stroke();
+
+            // ラベルのコールアウトを描画（中心点からオフセット）
+            const centerX = (arrowSx + arrowEx) / 2;
+            const centerY = (arrowSy + arrowEy) / 2;
+            
+            let labelOffsetX = 0;
+            let labelOffsetY = 0;
+            if (arrowDistY < 0) labelOffsetY = -35; // 矢印が上ならラベルはさらに上へ
+            else if (arrowDistY > 0) labelOffsetY = 35; // 矢印が下ならラベルはさらに下へ
+            else if (arrowDistX < 0) labelOffsetX = -65; 
+            else if (arrowDistX > 0) labelOffsetX = 65; 
+
+            drawCallout(label, centerX, centerY, labelOffsetX, labelOffsetY, isQuestion);
+        }
+
+        // 電気用図記号の描画関数
+        function drawBattery(x, y) {
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW; // プラスもマイナスも同じ太さ
+            ctx.beginPath();
+            // 長い線（＋極）
+            ctx.moveTo(x - 10, y - 20); ctx.lineTo(x - 10, y + 20);
+            // 短い線（－極）同じ太さ
+            ctx.moveTo(x + 10, y - 10); ctx.lineTo(x + 10, y + 10); 
+            ctx.stroke();
+            
+            // +, - の文字
+            ctx.font = '16px Arial';
+            ctx.fillStyle = style.lineColor;
+            ctx.fillText('+', x - 25, y - 25);
+            ctx.fillText('-', x + 25, y - 25);
+        }
+
+        function drawBulb(x, y, label) {
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW;
+            ctx.fillStyle = 'white';
+            
+            // 丸
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // バツ印
+            ctx.beginPath();
+            ctx.moveTo(x - 14, y - 14); ctx.lineTo(x + 14, y + 14);
+            ctx.moveTo(x + 14, y - 14); ctx.lineTo(x - 14, y + 14);
+            ctx.stroke();
+            
+            // 豆電球の名前（ア、イなど）位置を少し下げて矢印と被らないように
+            ctx.font = 'bold 20px "M PLUS Rounded 1c"';
+            ctx.fillStyle = '#475569';
+            ctx.fillText(label, x, y - 32);
+        }
+
+        function drawSeriesCircuit2() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            
+            // 座標定義 (幅を広げてゆったりと)
+            const w = 480; 
+            const h = 250; 
+            const left = cx - w/2;
+            const right = cx + w/2;
+            const top = cy - h/2 - 20;
+            const bottom = cy + h/2 - 20;
+
+            const bulb1X = cx - 140; // 間隔を広げる
+            const bulb2X = cx + 140;
+            
+            // 導線の描画
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW;
+            ctx.beginPath();
+            ctx.moveTo(left, top); ctx.lineTo(right, top); // 上
+            ctx.moveTo(left, top); ctx.lineTo(left, bottom); // 左
+            ctx.moveTo(right, top); ctx.lineTo(right, bottom); // 右
+            // 下 (電源と隙間なくつなげるため一本の線を引く)
+            ctx.moveTo(left, bottom); ctx.lineTo(right, bottom);
+            ctx.stroke();
+
+            // 電源 (下辺中央付近) - 導線を一部消して電池記号を入れる
+            ctx.clearRect(cx - 12, bottom - 5, 24, 10);
+            drawBattery(cx, bottom);
+
+            // 豆電球1
+            ctx.clearRect(bulb1X - 22, top - 22, 44, 44);
+            drawBulb(bulb1X, top, 'ア');
+            
+            // 豆電球2
+            ctx.clearRect(bulb2X - 22, top - 22, 44, 44);
+            drawBulb(bulb2X, top, 'イ');
+
+            // --- 値の表示 ---
+            const isQTotal = state.questionTarget === 'total';
+
+            if (state.isCurrentMode) {
+                // 内側に寄せて見切れないように
+                drawCallout(isQTotal ? '？ A' : `${state.values.iTotal} A`, left, cy, 70, 0, isQTotal); 
+
+                const isQ1 = state.questionTarget === '1';
+                drawCallout(isQ1 ? '？ A' : `${state.values.i1} A`, cx, top, 0, -70, isQ1); // 中央へ
+
+                const isQ2 = state.questionTarget === '2';
+                drawCallout(isQ2 ? '？ A' : `${state.values.i2} A`, right, cy, -70, 0, isQ2);
+            } else {
+                // 電池の下に矢印
+                drawVoltageArrow(cx - 50, bottom, cx + 50, bottom, 0, 45, isQTotal ? '？ V' : `${state.values.vTotal} V`, isQTotal);
+
+                // 電球の上により高く矢印を配置（幅も狭めて中央に）
+                const isQ1 = state.questionTarget === '1';
+                drawVoltageArrow(bulb1X - 40, top, bulb1X + 40, top, 0, -50, isQ1 ? '？ V' : `${state.values.v1} V`, isQ1);
+
+                const isQ2 = state.questionTarget === '2';
+                drawVoltageArrow(bulb2X - 40, top, bulb2X + 40, top, 0, -50, isQ2 ? '？ V' : `${state.values.v2} V`, isQ2);
+            }
+        }
+
+        function drawSeriesCircuit3() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const w = 600; 
+            const h = 250; 
+            const left = cx - w/2;
+            const right = cx + w/2;
+            const top = cy - h/2 - 20;
+            const bottom = cy + h/2 - 20;
+
+            const bulb1X = cx - 180;
+            const bulb2X = cx;
+            const bulb3X = cx + 180;
+            
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW;
+            ctx.beginPath();
+            ctx.moveTo(left, top); ctx.lineTo(right, top);
+            ctx.moveTo(left, top); ctx.lineTo(left, bottom);
+            ctx.moveTo(right, top); ctx.lineTo(right, bottom);
+            ctx.moveTo(left, bottom); ctx.lineTo(right, bottom); // 一本につなぐ
+            ctx.stroke();
+
+            ctx.clearRect(cx - 12, bottom - 5, 24, 10);
+            drawBattery(cx, bottom);
+
+            ctx.clearRect(bulb1X - 22, top - 22, 44, 44); drawBulb(bulb1X, top, 'ア');
+            ctx.clearRect(bulb2X - 22, top - 22, 44, 44); drawBulb(bulb2X, top, 'イ');
+            ctx.clearRect(bulb3X - 22, top - 22, 44, 44); drawBulb(bulb3X, top, 'ウ');
+
+            if (state.isCurrentMode) {
+                // 端は見切れないように内側へ
+                drawCallout(state.questionTarget === 'total' ? '？ A' : `${state.values.iTotal} A`, left, cy, 70, 0, state.questionTarget === 'total'); 
+                drawCallout(state.questionTarget === '1' ? '？ A' : `${state.values.i1} A`, cx - 90, top, 0, -70, state.questionTarget === '1'); 
+                drawCallout(state.questionTarget === '2' ? '？ A' : `${state.values.i2} A`, cx + 90, top, 0, -70, state.questionTarget === '2'); 
+                drawCallout(state.questionTarget === '3' ? '？ A' : `${state.values.i3} A`, right, cy, -70, 0, state.questionTarget === '3'); 
+            } else {
+                drawVoltageArrow(cx - 50, bottom, cx + 50, bottom, 0, 45, state.questionTarget === 'total' ? '？ V' : `${state.values.vTotal} V`, state.questionTarget === 'total');
+                drawVoltageArrow(bulb1X - 40, top, bulb1X + 40, top, 0, -50, state.questionTarget === '1' ? '？ V' : `${state.values.v1} V`, state.questionTarget === '1');
+                drawVoltageArrow(bulb2X - 40, top, bulb2X + 40, top, 0, -50, state.questionTarget === '2' ? '？ V' : `${state.values.v2} V`, state.questionTarget === '2');
+                drawVoltageArrow(bulb3X - 40, top, bulb3X + 40, top, 0, -50, state.questionTarget === '3' ? '？ V' : `${state.values.v3} V`, state.questionTarget === '3');
+            }
+        }
+
+        function drawParallelCircuit2() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const w = 440; 
+            const h = 340; 
+            const left = cx - w/2;
+            const right = cx + w/2;
+            
+            const y1 = cy - 100; // ア
+            const y2 = cy + 20;  // イ
+            const y3 = cy + 140; // 電源
+
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW;
+            ctx.beginPath();
+            ctx.moveTo(left, y3); ctx.lineTo(left, y1);
+            ctx.moveTo(right, y3); ctx.lineTo(right, y1);
+            ctx.moveTo(left, y1); ctx.lineTo(right, y1); 
+            ctx.moveTo(left, y2); ctx.lineTo(right, y2); 
+            ctx.moveTo(left, y3); ctx.lineTo(right, y3); // 一本につなぐ
+            ctx.stroke();
+
+            ctx.fillStyle = style.lineColor;
+            ctx.beginPath(); ctx.arc(left, y2, style.lineW*1.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(right, y2, style.lineW*1.5, 0, Math.PI*2); ctx.fill();
+
+            ctx.clearRect(cx - 12, y3 - 5, 24, 10);
+            drawBattery(cx, y3);
+
+            ctx.clearRect(cx - 22, y1 - 22, 44, 44); drawBulb(cx, y1, 'ア');
+            ctx.clearRect(cx - 22, y2 - 22, 44, 44); drawBulb(cx, y2, 'イ');
+
+            if (state.isCurrentMode) {
+                // 見切れないように内側に
+                drawCallout(state.questionTarget === 'total' ? '？ A' : `${state.values.iTotal} A`, left, (y2+y3)/2, 80, 0, state.questionTarget === 'total');
+                drawCallout(state.questionTarget === '1' ? '？ A' : `${state.values.i1} A`, left + w/4, y1, 0, -60, state.questionTarget === '1');
+                drawCallout(state.questionTarget === '2' ? '？ A' : `${state.values.i2} A`, left + w/4, y2, 0, -60, state.questionTarget === '2');
+            } else {
+                // 電源の下
+                drawVoltageArrow(cx - 50, y3, cx + 50, y3, 0, 45, state.questionTarget === 'total' ? '？ V' : `${state.values.vTotal} V`, state.questionTarget === 'total');
+                // 電球の上
+                drawVoltageArrow(cx - 40, y1, cx + 40, y1, 0, -50, state.questionTarget === '1' ? '？ V' : `${state.values.v1} V`, state.questionTarget === '1');
+                // 電球イの下（アと被らないように。電池とも被らない）
+                drawVoltageArrow(cx - 40, y2, cx + 40, y2, 0, 45, state.questionTarget === '2' ? '？ V' : `${state.values.v2} V`, state.questionTarget === '2');
+            }
+        }
+
+        function drawParallelCircuit3() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const w = 560; 
+            const left = cx - w/2;
+            const right = cx + w/2;
+            
+            const y1 = cy - 100; // 上枝（ア）
+            const y2 = cy + 20;  // 下枝（イ、ウ）
+            const y3 = cy + 140; // 電源
+
+            const bulb2X = cx - 140;
+            const bulb3X = cx + 140;
+
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW;
+            ctx.beginPath();
+            ctx.moveTo(left, y3); ctx.lineTo(left, y1);
+            ctx.moveTo(right, y3); ctx.lineTo(right, y1);
+            ctx.moveTo(left, y1); ctx.lineTo(right, y1); 
+            ctx.moveTo(left, y2); ctx.lineTo(right, y2); 
+            ctx.moveTo(left, y3); ctx.lineTo(right, y3); // 一本につなぐ
+            ctx.stroke();
+
+            ctx.fillStyle = style.lineColor;
+            ctx.beginPath(); ctx.arc(left, y2, style.lineW*1.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(right, y2, style.lineW*1.5, 0, Math.PI*2); ctx.fill();
+
+            ctx.clearRect(cx - 12, y3 - 5, 24, 10); drawBattery(cx, y3);
+
+            ctx.clearRect(cx - 22, y1 - 22, 44, 44); drawBulb(cx, y1, 'ア');
+            ctx.clearRect(bulb2X - 22, y2 - 22, 44, 44); drawBulb(bulb2X, y2, 'イ');
+            ctx.clearRect(bulb3X - 22, y2 - 22, 44, 44); drawBulb(bulb3X, y2, 'ウ');
+
+            if (state.isCurrentMode) {
+                // 見切れないように
+                drawCallout(state.questionTarget === 'total' ? '？ A' : `${state.values.iTotal} A`, left, (y2+y3)/2, 80, 0, state.questionTarget === 'total');
+                drawCallout(state.questionTarget === '1' ? '？ A' : `${state.values.i1} A`, cx - 120, y1, 0, -50, state.questionTarget === '1');
+                drawCallout(state.questionTarget === '2' ? '？ A' : `${state.values.i2} A`, bulb2X + 70, y2, 0, -50, state.questionTarget === '2');
+                drawCallout(state.questionTarget === '3' ? '？ A' : `${state.values.i3} A`, right - 60, y2, 0, -50, state.questionTarget === '3');
+            } else {
+                drawVoltageArrow(cx - 50, y3, cx + 50, y3, 0, 45, state.questionTarget === 'total' ? '？ V' : `${state.values.vTotal} V`, state.questionTarget === 'total');
+                drawVoltageArrow(cx - 40, y1, cx + 40, y1, 0, -50, state.questionTarget === '1' ? '？ V' : `${state.values.v1} V`, state.questionTarget === '1');
+                // イとウの電圧は下側に表示
+                drawVoltageArrow(bulb2X - 40, y2, bulb2X + 40, y2, 0, 45, state.questionTarget === '2' ? '？ V' : `${state.values.v2} V`, state.questionTarget === '2');
+                drawVoltageArrow(bulb3X - 40, y2, bulb3X + 40, y2, 0, 45, state.questionTarget === '3' ? '？ V' : `${state.values.v3} V`, state.questionTarget === '3');
+            }
+        }
+
+        function draw() {
+            // キャンバスをクリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (state.isSeries) {
+                if (state.bulbCount === 2) drawSeriesCircuit2();
+                else drawSeriesCircuit3();
+            } else {
+                if (state.bulbCount === 2) drawParallelCircuit2();
+                else drawParallelCircuit3();
+            }
+        }
+
+        // 直列ボタンクリック
+        btnSeries.addEventListener('click', () => {
+            if (!state.isSeries) {
+                state.isSeries = true;
+                updateCircuitButtons();
+                generateProblem();
+            }
+        });
+
+        // 並列ボタンクリック
+        btnParallel.addEventListener('click', () => {
+            if (state.isSeries) {
+                state.isSeries = false;
+                updateCircuitButtons();
+                generateProblem();
+            }
+        });
+
+        function updateCircuitButtons() {
+            if (state.isSeries) {
+                btnSeries.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-blue-500 text-white shadow-md transform scale-105";
+                btnParallel.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300";
+            } else {
+                btnParallel.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-indigo-500 text-white shadow-md transform scale-105";
+                btnSeries.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300";
+            }
+        }
+
+        // 電流モードボタンクリック
+        btnModeCurrent.addEventListener('click', () => {
+            if (!state.isCurrentMode) {
+                state.isCurrentMode = true;
+                updateModeButtons();
+                generateProblem();
+            }
+        });
+
+        // 電圧モードボタンクリック
+        btnModeVoltage.addEventListener('click', () => {
+            if (state.isCurrentMode) {
+                state.isCurrentMode = false;
+                updateModeButtons();
+                generateProblem();
+            }
+        });
+
+        function updateModeButtons() {
+            if (state.isCurrentMode) {
+                btnModeCurrent.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-orange-500 text-white shadow-md transform scale-105";
+                btnModeVoltage.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300";
+            } else {
+                btnModeVoltage.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-purple-500 text-white shadow-md transform scale-105";
+                btnModeCurrent.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300";
+            }
+        }
+
+        // 問題生成ボタン
+        btnGenerate.addEventListener('click', () => {
+            // ボタンアニメーション
+            btnGenerate.classList.add('scale-95');
+            setTimeout(() => btnGenerate.classList.remove('scale-95'), 150);
+            generateProblem();
+        });
+        
+        // ランダム出題ボタン群の処理
+        function animateButton(btn) {
+            btn.classList.add('scale-95');
+            setTimeout(() => btn.classList.remove('scale-95'), 150);
+        }
+
+        btnRandCurrent.addEventListener('click', () => {
+            animateButton(btnRandCurrent);
+            state.isCurrentMode = true; // 電流固定
+            state.isSeries = Math.random() < 0.5; // 直列・並列は50%
+            updateModeButtons();
+            updateCircuitButtons();
+            generateProblem();
+        });
+
+        btnRandVoltage.addEventListener('click', () => {
+            animateButton(btnRandVoltage);
+            state.isCurrentMode = false; // 電圧固定
+            state.isSeries = Math.random() < 0.5; // 直列・並列は50%
+            updateModeButtons();
+            updateCircuitButtons();
+            generateProblem();
+        });
+
+        btnRandAll.addEventListener('click', () => {
+            animateButton(btnRandAll);
+            state.isCurrentMode = Math.random() < 0.5; // 電流・電圧も50%
+            state.isSeries = Math.random() < 0.5; // 直列・並列も50%
+            updateModeButtons();
+            updateCircuitButtons();
+            generateProblem();
+        });
+
+        // 豆電球3個モードのトグルスイッチ
+        toggle3Bulbs.addEventListener('change', (e) => {
+            state.allow3Bulbs = e.target.checked;
+            toggle3BulbsText.textContent = state.allow3Bulbs ? 'ON' : 'OFF';
+            toggle3BulbsText.classList.toggle('text-green-600', state.allow3Bulbs);
+            toggle3BulbsText.classList.toggle('text-gray-500', !state.allow3Bulbs);
+            generateProblem();
+        });
+
+        // 答え合わせボタン
+        btnCheck.addEventListener('click', () => {
+            const userAnsStr = inputAnswer.value;
+            if (userAnsStr === '') {
+                feedbackText.textContent = '数字を入力してね！';
+                feedbackText.classList.replace('text-green-500', 'text-red-500');
+                return;
+            }
+
+            const userAns = parseFloat(userAnsStr);
+            // 浮動小数点の比較のための許容誤差
+            const epsilon = 0.01; 
+
+            if (Math.abs(userAns - state.answerValue) < epsilon) {
+                // 正解
+                feedbackText.textContent = '';
+                // 正解オーバーレイを表示
+                const unit = state.isCurrentMode ? 'A' : 'V';
+                answerDetail.innerHTML = `正解は <strong>${state.answerValue} ${unit}</strong> です。<br>よくできました！`;
+                answerOverlay.classList.remove('hidden');
+                
+                // 少し時間をおいて次の問題を促すなら自動生成も可だが、ここでは手動にする
+            } else {
+                // 不正解
+                feedbackText.textContent = 'ざんねん！もういちど計算してみよう。';
+                feedbackText.classList.replace('text-green-500', 'text-red-500');
+                
+                // 入力欄を揺らすアニメーション
+                inputAnswer.classList.add('animate-pulse', 'border-red-500');
+                setTimeout(() => {
+                    inputAnswer.classList.remove('animate-pulse', 'border-red-500');
+                }, 1000);
+            }
+        });
+
+        // オーバーレイを閉じるボタン
+        btnCloseOverlay.addEventListener('click', () => {
+            answerOverlay.classList.add('hidden');
+            // 閉じたら自動で次の問題へ
+            generateProblem();
+        });
+
+        // Enterキーで答え合わせ
+        inputAnswer.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                btnCheck.click();
+            }
+        });
+
+        // 起動時に最初の問題を生成して描画
+        window.onload = () => {
+            generateProblem();
+        };
+
+    </script>
+</body>
+</html><!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>直列・並列回路 電流・電圧学習アプリ</title>
+    <!-- Tailwind CSSの読み込み -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* カスタムフォントとベーススタイル */
+        @import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@400;700&display=swap');
+        body {
+            font-family: 'M PLUS Rounded 1c', sans-serif;
+            background-color: #f0fdf4; /* 薄い緑色の背景 */
+            color: #333;
+        }
+        /* キャンバスのスタイル */
+        #circuitCanvas {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            /* タッチデバイスでのスクロール防止 */
+            touch-action: none; 
+            max-width: 100%;
+            height: auto;
+        }
+        /* ボタンのホバーエフェクト */
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        /* アニメーション用クラス */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen items-center p-4">
+
+    <header class="w-full max-w-4xl text-center mb-6 fade-in">
+        <h1 class="text-4xl md:text-5xl font-bold text-green-700 mb-2">⚡️ 電流・電圧 マスターアプリ ⚡️</h1>
+        <p class="text-lg md:text-xl text-gray-600">回路の謎を解き明かそう！「？」の数字はいくつかな？</p>
+    </header>
+
+    <main class="w-full max-w-4xl bg-white p-6 rounded-2xl shadow-xl flex flex-col items-center fade-in">
+        
+        <!-- コントロールパネル -->
+        <div class="flex flex-col items-center gap-6 mb-4 w-full">
+            <div class="flex flex-wrap justify-center gap-8 w-full">
+                <!-- 回路種類切り替えタブ -->
+                <div class="flex bg-gray-200 rounded-full p-1 shadow-inner items-center">
+                    <button id="btnSeries" class="px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-blue-500 text-white shadow-md transform scale-105">
+                        直列回路
+                    </button>
+                    <button id="btnParallel" class="px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300">
+                        並列回路
+                    </button>
+                </div>
+
+                <!-- モード切り替えタブ -->
+                <div class="flex bg-gray-200 rounded-full p-1 shadow-inner items-center">
+                    <button id="btnModeCurrent" class="px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-orange-500 text-white shadow-md transform scale-105">
+                        電流モード
+                    </button>
+                    <button id="btnModeVoltage" class="px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300">
+                        電圧モード
+                    </button>
+                </div>
+            </div>
+
+            <button id="btnGenerate" class="px-8 py-3 bg-green-500 text-white text-xl font-bold rounded-full btn-hover transition duration-300 shadow-md flex items-center justify-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                問題を変える
+            </button>
+        </div>
+
+        <!-- ランダム出題モード -->
+        <div class="flex flex-col items-center mb-6 w-full fade-in border-t border-gray-200 pt-4">
+            <span class="text-sm font-bold text-gray-500 mb-3">＼ ランダム出題モード ／</span>
+            <div class="flex flex-wrap justify-center gap-4 w-full">
+                <button id="btnRandCurrent" class="px-4 py-2 bg-orange-100 text-orange-700 font-bold rounded-xl btn-hover transition duration-300 shadow border-2 border-orange-300">
+                    電流ランダム
+                </button>
+                <button id="btnRandVoltage" class="px-4 py-2 bg-purple-100 text-purple-700 font-bold rounded-xl btn-hover transition duration-300 shadow border-2 border-purple-300">
+                    電圧ランダム
+                </button>
+                <button id="btnRandAll" class="px-4 py-2 bg-pink-100 text-pink-700 font-bold rounded-xl btn-hover transition duration-300 shadow border-2 border-pink-300">
+                    電流・電圧ランダム
+                </button>
+            </div>
+        </div>
+
+        <!-- 豆電球3個モード トグルスイッチ -->
+        <div class="flex items-center justify-center gap-3 mb-6 w-full fade-in">
+            <span class="text-lg font-bold text-gray-700">豆電球3個モード:</span>
+            <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle3Bulbs" class="sr-only peer">
+                <div class="w-14 h-7 bg-gray-300 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-green-500"></div>
+            </label>
+            <span class="text-lg font-bold text-gray-500 w-12" id="toggle3BulbsText">OFF</span>
+        </div>
+
+        <!-- 状態表示テキスト -->
+        <div id="statusText" class="text-2xl font-bold text-gray-700 mb-4 h-8">
+            直列回路の電流を計算しよう！
+        </div>
+
+        <div class="relative w-full flex justify-center overflow-hidden">
+            <!-- キャンバスの論理サイズを大きめに設定し、CSSでレスポンシブに縮小表示させる -->
+            <canvas id="circuitCanvas" width="800" height="600" class="w-full max-w-[800px] border-4 border-gray-200"></canvas>
+            
+            <!-- 正解表示用のオーバーレイ（初期非表示） -->
+            <div id="answerOverlay" class="absolute inset-0 flex items-center justify-center bg-white bg-opacity-90 hidden rounded-xl flex-col z-10">
+                <div class="text-6xl font-bold text-red-600 mb-4 animate-bounce">正解！🎉</div>
+                <div id="answerDetail" class="text-3xl text-gray-800 font-bold mb-6 text-center"></div>
+                <button id="btnCloseOverlay" class="px-8 py-4 bg-gray-600 text-white text-2xl font-bold rounded-full hover:bg-gray-700 transition duration-300 shadow-lg">
+                    閉じる
+                </button>
+            </div>
+        </div>
+
+        <!-- 答え合わせセクション -->
+        <div class="mt-8 flex flex-col items-center w-full bg-blue-50 p-6 rounded-xl border-2 border-blue-200">
+            <h2 class="text-2xl font-bold text-blue-800 mb-4">「？」に入る数字は？</h2>
+            <div class="flex items-center gap-4">
+                <input type="number" id="inputAnswer" class="w-32 h-16 text-3xl text-center border-4 border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" placeholder="0" step="0.1">
+                <span id="unitText" class="text-3xl font-bold text-gray-700">A</span>
+                <button id="btnCheck" class="px-8 py-4 bg-red-500 text-white text-2xl font-bold rounded-xl btn-hover transition duration-300 shadow-lg ml-4">
+                    こたえあわせ
+                </button>
+            </div>
+            <p id="feedbackText" class="mt-4 text-xl font-bold h-8 text-red-500"></p>
+        </div>
+
+    </main>
+
+    <footer class="mt-8 text-gray-500 text-sm">
+        &copy; 2026 Science Class Circuit App
+    </footer>
+
+    <script>
+        const canvas = document.getElementById('circuitCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // UI要素の取得
+        const btnSeries = document.getElementById('btnSeries');
+        const btnParallel = document.getElementById('btnParallel');
+        const btnModeCurrent = document.getElementById('btnModeCurrent');
+        const btnModeVoltage = document.getElementById('btnModeVoltage');
+        const btnGenerate = document.getElementById('btnGenerate');
+        const btnRandCurrent = document.getElementById('btnRandCurrent');
+        const btnRandVoltage = document.getElementById('btnRandVoltage');
+        const btnRandAll = document.getElementById('btnRandAll');
+        const btnCheck = document.getElementById('btnCheck');
+        const inputAnswer = document.getElementById('inputAnswer');
+        const statusText = document.getElementById('statusText');
+        const unitText = document.getElementById('unitText');
+        const feedbackText = document.getElementById('feedbackText');
+        const answerOverlay = document.getElementById('answerOverlay');
+        const answerDetail = document.getElementById('answerDetail');
+        const btnCloseOverlay = document.getElementById('btnCloseOverlay');
+        const toggle3Bulbs = document.getElementById('toggle3Bulbs');
+        const toggle3BulbsText = document.getElementById('toggle3BulbsText');
+
+        // アプリケーションの状態
+        let state = {
+            isSeries: true,       // true: 直列, false: 並列
+            isCurrentMode: true,  // true: 電流モード, false: 電圧モード
+            allow3Bulbs: false,   // true: 3個モードON, false: 2個固定
+            bulbCount: 2,         // 豆電球の数 (2 or 3)
+            values: {             // 現在の問題の数値データ
+                vTotal: 0, v1: 0, v2: 0, v3: 0, // 電圧
+                iTotal: 0, i1: 0, i2: 0, i3: 0  // 電流
+            },
+            questionTarget: '',   // 'total', '1', '2', '3' のどれが？になるか
+            answerValue: 0        // ユーザーが答えるべき正解の値
+        };
+
+        // 描画用の設定パラメータ
+        const style = {
+            lineW: 4,             // 導線の太さ
+            lineColor: '#334155', // 導線の色(slate-700)
+            pointR: 6,            // 電流を示す点の半径
+            pointColor: '#ef4444',// 点の色(red-500)
+            font: 'bold 24px "M PLUS Rounded 1c", sans-serif',
+            textColor: '#1e293b', // 文字色
+            boxBg: '#ffffff',     // 値表示枠の背景
+            boxBorder: '#94a3b8', // 値表示枠の枠線
+            qBoxBg: '#fef08a',    // 「？」枠の背景色(yellow-200)
+            qBoxBorder: '#eab308' // 「？」枠の枠線色(yellow-500)
+        };
+
+        // 回路の種類とモードに応じてランダムな数値を生成する
+        function generateProblem() {
+            // 初期化
+            inputAnswer.value = '';
+            feedbackText.textContent = '';
+            
+            // トグルの状態によって2個か3個かを設定
+            if (state.allow3Bulbs) {
+                state.bulbCount = Math.random() < 0.5 ? 2 : 3;
+            } else {
+                state.bulbCount = 2;
+            }
+            
+            if (state.isSeries) {
+                // --- 直列回路 ---
+                state.values.iTotal = (Math.floor(Math.random() * 5) + 1) * 0.1;
+                state.values.iTotal = Math.round(state.values.iTotal * 10) / 10; 
+                state.values.i1 = state.values.iTotal;
+                state.values.i2 = state.values.iTotal;
+                state.values.i3 = state.values.iTotal;
+
+                if (state.bulbCount === 2) {
+                    const baseVolts = [0.5, 1.0, 1.5, 2.0];
+                    const bV = baseVolts[Math.floor(Math.random() * baseVolts.length)];
+                    const rRatioChoices = [[1, 1], [1, 2], [2, 1], [1, 3], [3, 1]];
+                    const ratio = rRatioChoices[Math.floor(Math.random() * rRatioChoices.length)];
+                    state.values.v1 = bV * ratio[0];
+                    state.values.v2 = bV * ratio[1];
+                    state.values.vTotal = state.values.v1 + state.values.v2;
+                } else {
+                    // 3個直列
+                    const vList = [1.0, 1.5, 2.0, 3.0];
+                    state.values.v1 = vList[Math.floor(Math.random() * vList.length)];
+                    state.values.v2 = vList[Math.floor(Math.random() * vList.length)];
+                    state.values.v3 = vList[Math.floor(Math.random() * vList.length)];
+                    state.values.vTotal = state.values.v1 + state.values.v2 + state.values.v3;
+                }
+                state.values.vTotal = Math.round(state.values.vTotal * 10) / 10;
+
+            } else {
+                // --- 並列回路 ---
+                const volts = [1.5, 3.0, 4.5, 6.0];
+                state.values.vTotal = volts[Math.floor(Math.random() * volts.length)];
+                
+                if (state.bulbCount === 2) {
+                    state.values.v1 = state.values.vTotal;
+                    state.values.v2 = state.values.vTotal;
+
+                    const baseAmps = [0.1, 0.2, 0.3];
+                    const bA = baseAmps[Math.floor(Math.random() * baseAmps.length)];
+                    const rRatioChoices = [[1, 1], [1, 2], [2, 1]];
+                    const ratio = rRatioChoices[Math.floor(Math.random() * rRatioChoices.length)];
+                    
+                    state.values.i1 = bA * ratio[1];
+                    state.values.i1 = Math.round(state.values.i1 * 10) / 10;
+                    state.values.i2 = bA * ratio[0];
+                    state.values.i2 = Math.round(state.values.i2 * 10) / 10;
+                    state.values.iTotal = Math.round((state.values.i1 + state.values.i2) * 10) / 10;
+                } else {
+                    // 並列3個 (上枝にア(1)、下枝にイ(2)とウ(3))
+                    state.values.v1 = state.values.vTotal; // 上枝
+                    
+                    // 下枝の分圧
+                    const splitRatios = [[1, 1], [1, 2], [2, 1]];
+                    const ratio = splitRatios[Math.floor(Math.random() * splitRatios.length)];
+                    const unitV = state.values.vTotal / (ratio[0] + ratio[1]);
+                    state.values.v2 = Math.round(unitV * ratio[0] * 10) / 10;
+                    state.values.v3 = Math.round(unitV * ratio[1] * 10) / 10;
+
+                    // 電流
+                    const bA = [0.1, 0.2, 0.3, 0.4];
+                    state.values.i1 = bA[Math.floor(Math.random() * bA.length)]; // 上枝電流
+                    state.values.i2 = bA[Math.floor(Math.random() * 2) + 1];     // 下枝電流
+                    state.values.i3 = state.values.i2;
+                    state.values.iTotal = Math.round((state.values.i1 + state.values.i2) * 10) / 10;
+                }
+            }
+
+            // どこを「？」にするかを決定
+            const targets = state.bulbCount === 2 ? ['total', '1', '2'] : ['total', '1', '2', '3'];
+            state.questionTarget = targets[Math.floor(Math.random() * targets.length)];
+
+            // 正解の値を設定し、UIを更新
+            if (state.isCurrentMode) {
+                if (state.questionTarget === 'total') state.answerValue = state.values.iTotal;
+                else if (state.questionTarget === '1') state.answerValue = state.values.i1;
+                else if (state.questionTarget === '2') state.answerValue = state.values.i2;
+                else if (state.questionTarget === '3') state.answerValue = state.values.i3;
+                unitText.textContent = 'A';
+                statusText.textContent = `${state.isSeries ? '直列' : '並列'}回路の 電流 を計算しよう！`;
+            } else {
+                if (state.questionTarget === 'total') state.answerValue = state.values.vTotal;
+                else if (state.questionTarget === '1') state.answerValue = state.values.v1;
+                else if (state.questionTarget === '2') state.answerValue = state.values.v2;
+                else if (state.questionTarget === '3') state.answerValue = state.values.v3;
+                unitText.textContent = 'V';
+                statusText.textContent = `${state.isSeries ? '直列' : '並列'}回路の 電圧 を計算しよう！`;
+            }
+
+            draw(); // キャンバスの再描画
+        }
+
+        // 丸角の四角形を描画する関数（背景付きテキスト用）
+        function roundRect(ctx, x, y, width, height, radius, fill, stroke) {
+            ctx.beginPath();
+            ctx.moveTo(x + radius, y);
+            ctx.lineTo(x + width - radius, y);
+            ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+            ctx.lineTo(x + width, y + height - radius);
+            ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+            ctx.lineTo(x + radius, y + height);
+            ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+            ctx.lineTo(x, y + radius);
+            ctx.quadraticCurveTo(x, y, x + radius, y);
+            ctx.closePath();
+            if (fill) {
+                ctx.fillStyle = fill;
+                ctx.fill();
+            }
+            if (stroke) {
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+        }
+
+        // 引き出し線付きのテキストボックスを描画する関数
+        // pointX, pointY: 回路上の点（または区間の中心）
+        // offsetX, offsetY: 点からの相対的な配置位置
+        function drawCallout(text, pointX, pointY, offsetX, offsetY, isQuestion) {
+            const boxX = pointX + offsetX;
+            const boxY = pointY + offsetY;
+            
+            // テキストのサイズを測る
+            ctx.font = style.font;
+            const textMetrics = ctx.measureText(text);
+            const textWidth = textMetrics.width;
+            
+            // ボックスのサイズと位置（テキストを中央配置）
+            const paddingX = 15;
+            const paddingY = 10;
+            const boxW = textWidth + paddingX * 2;
+            const boxH = 40;
+            const bX = boxX - boxW / 2;
+            const bY = boxY - boxH / 2;
+
+            // 1. 引き出し線を描画
+            ctx.beginPath();
+            ctx.moveTo(pointX, pointY);
+            // 点とボックスの中心を結ぶ
+            ctx.lineTo(boxX, boxY);
+            ctx.strokeStyle = '#64748b'; // slate-500
+            ctx.lineWidth = 2;
+            // 破線にする（見やすくするため）
+            ctx.setLineDash([5, 5]);
+            ctx.stroke();
+            ctx.setLineDash([]); // 破線リセット
+
+            // 2. 点を描画（電流モードなど、特定の点を示す場合）
+            // 電圧の矢印の起点の時は描かないなどの制御が必要だが、
+            // ここでは呼ばれたら基本点も打つ仕様にする（引数で制御も可）
+            ctx.beginPath();
+            ctx.arc(pointX, pointY, style.pointR, 0, Math.PI * 2);
+            ctx.fillStyle = style.pointColor;
+            ctx.fill();
+
+            // 3. ボックスを描画
+            const bg = isQuestion ? style.qBoxBg : style.boxBg;
+            const border = isQuestion ? style.qBoxBorder : style.boxBorder;
+            roundRect(ctx, bX, bY, boxW, boxH, 8, bg, border);
+
+            // 4. テキストを描画
+            ctx.fillStyle = isQuestion ? '#b45309' : style.textColor; // ?は濃い黄色テキスト
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(text, boxX, boxY);
+        }
+
+        // 電圧測定用の区間を示す矢印を描画する関数
+        function drawVoltageArrow(circuitSx, circuitSy, circuitEx, circuitEy, arrowDistX, arrowDistY, label, isQuestion) {
+            const arrowSx = circuitSx + arrowDistX;
+            const arrowSy = circuitSy + arrowDistY;
+            const arrowEx = circuitEx + arrowDistX;
+            const arrowEy = circuitEy + arrowDistY;
+            
+            // 補助線（回路から矢印までのガイドライン）
+            ctx.beginPath();
+            ctx.moveTo(circuitSx, circuitSy); ctx.lineTo(arrowSx, arrowSy);
+            ctx.moveTo(circuitEx, circuitEy); ctx.lineTo(arrowEx, arrowEy);
+            ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 1; ctx.stroke();
+
+            // 矢印の主線
+            ctx.beginPath();
+            ctx.moveTo(arrowSx, arrowSy);
+            ctx.lineTo(arrowEx, arrowEy);
+            ctx.strokeStyle = '#3b82f6'; // blue-500
+            ctx.lineWidth = 3;
+            ctx.stroke();
+
+            // 矢印の頭（両端）
+            const headlen = 10;
+            const angle = Math.atan2(arrowEy - arrowSy, arrowEx - arrowSx);
+            
+            ctx.beginPath();
+            ctx.moveTo(arrowSx, arrowSy);
+            ctx.lineTo(arrowSx + headlen * Math.cos(angle + Math.PI/6), arrowSy + headlen * Math.sin(angle + Math.PI/6));
+            ctx.moveTo(arrowSx, arrowSy);
+            ctx.lineTo(arrowSx + headlen * Math.cos(angle - Math.PI/6), arrowSy + headlen * Math.sin(angle - Math.PI/6));
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.moveTo(arrowEx, arrowEy);
+            ctx.lineTo(arrowEx - headlen * Math.cos(angle - Math.PI/6), arrowEy - headlen * Math.sin(angle - Math.PI/6));
+            ctx.moveTo(arrowEx, arrowEy);
+            ctx.lineTo(arrowEx - headlen * Math.cos(angle + Math.PI/6), arrowEy - headlen * Math.sin(angle + Math.PI/6));
+            ctx.stroke();
+
+            // ラベルのコールアウトを描画（中心点からオフセット）
+            const centerX = (arrowSx + arrowEx) / 2;
+            const centerY = (arrowSy + arrowEy) / 2;
+            
+            let labelOffsetX = 0;
+            let labelOffsetY = 0;
+            if (arrowDistY < 0) labelOffsetY = -35; // 矢印が上ならラベルはさらに上へ
+            else if (arrowDistY > 0) labelOffsetY = 35; // 矢印が下ならラベルはさらに下へ
+            else if (arrowDistX < 0) labelOffsetX = -65; 
+            else if (arrowDistX > 0) labelOffsetX = 65; 
+
+            drawCallout(label, centerX, centerY, labelOffsetX, labelOffsetY, isQuestion);
+        }
+
+        // 電気用図記号の描画関数
+        function drawBattery(x, y) {
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW; // プラスもマイナスも同じ太さ
+            ctx.beginPath();
+            // 長い線（＋極）
+            ctx.moveTo(x - 10, y - 20); ctx.lineTo(x - 10, y + 20);
+            // 短い線（－極）同じ太さ
+            ctx.moveTo(x + 10, y - 10); ctx.lineTo(x + 10, y + 10); 
+            ctx.stroke();
+            
+            // +, - の文字
+            ctx.font = '16px Arial';
+            ctx.fillStyle = style.lineColor;
+            ctx.fillText('+', x - 25, y - 25);
+            ctx.fillText('-', x + 25, y - 25);
+        }
+
+        function drawBulb(x, y, label) {
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW;
+            ctx.fillStyle = 'white';
+            
+            // 丸
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.stroke();
+            
+            // バツ印
+            ctx.beginPath();
+            ctx.moveTo(x - 14, y - 14); ctx.lineTo(x + 14, y + 14);
+            ctx.moveTo(x + 14, y - 14); ctx.lineTo(x - 14, y + 14);
+            ctx.stroke();
+            
+            // 豆電球の名前（ア、イなど）位置を少し下げて矢印と被らないように
+            ctx.font = 'bold 20px "M PLUS Rounded 1c"';
+            ctx.fillStyle = '#475569';
+            ctx.fillText(label, x, y - 32);
+        }
+
+        function drawSeriesCircuit2() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            
+            // 座標定義 (幅を広げてゆったりと)
+            const w = 480; 
+            const h = 250; 
+            const left = cx - w/2;
+            const right = cx + w/2;
+            const top = cy - h/2 - 20;
+            const bottom = cy + h/2 - 20;
+
+            const bulb1X = cx - 140; // 間隔を広げる
+            const bulb2X = cx + 140;
+            
+            // 導線の描画
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW;
+            ctx.beginPath();
+            ctx.moveTo(left, top); ctx.lineTo(right, top); // 上
+            ctx.moveTo(left, top); ctx.lineTo(left, bottom); // 左
+            ctx.moveTo(right, top); ctx.lineTo(right, bottom); // 右
+            // 下 (電源と隙間なくつなげるため一本の線を引く)
+            ctx.moveTo(left, bottom); ctx.lineTo(right, bottom);
+            ctx.stroke();
+
+            // 電源 (下辺中央付近) - 導線を一部消して電池記号を入れる
+            ctx.clearRect(cx - 12, bottom - 5, 24, 10);
+            drawBattery(cx, bottom);
+
+            // 豆電球1
+            ctx.clearRect(bulb1X - 22, top - 22, 44, 44);
+            drawBulb(bulb1X, top, 'ア');
+            
+            // 豆電球2
+            ctx.clearRect(bulb2X - 22, top - 22, 44, 44);
+            drawBulb(bulb2X, top, 'イ');
+
+            // --- 値の表示 ---
+            const isQTotal = state.questionTarget === 'total';
+
+            if (state.isCurrentMode) {
+                // 内側に寄せて見切れないように
+                drawCallout(isQTotal ? '？ A' : `${state.values.iTotal} A`, left, cy, 70, 0, isQTotal); 
+
+                const isQ1 = state.questionTarget === '1';
+                drawCallout(isQ1 ? '？ A' : `${state.values.i1} A`, cx, top, 0, -70, isQ1); // 中央へ
+
+                const isQ2 = state.questionTarget === '2';
+                drawCallout(isQ2 ? '？ A' : `${state.values.i2} A`, right, cy, -70, 0, isQ2);
+            } else {
+                // 電池の下に矢印
+                drawVoltageArrow(cx - 50, bottom, cx + 50, bottom, 0, 45, isQTotal ? '？ V' : `${state.values.vTotal} V`, isQTotal);
+
+                // 電球の上により高く矢印を配置（幅も狭めて中央に）
+                const isQ1 = state.questionTarget === '1';
+                drawVoltageArrow(bulb1X - 40, top, bulb1X + 40, top, 0, -50, isQ1 ? '？ V' : `${state.values.v1} V`, isQ1);
+
+                const isQ2 = state.questionTarget === '2';
+                drawVoltageArrow(bulb2X - 40, top, bulb2X + 40, top, 0, -50, isQ2 ? '？ V' : `${state.values.v2} V`, isQ2);
+            }
+        }
+
+        function drawSeriesCircuit3() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const w = 600; 
+            const h = 250; 
+            const left = cx - w/2;
+            const right = cx + w/2;
+            const top = cy - h/2 - 20;
+            const bottom = cy + h/2 - 20;
+
+            const bulb1X = cx - 180;
+            const bulb2X = cx;
+            const bulb3X = cx + 180;
+            
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW;
+            ctx.beginPath();
+            ctx.moveTo(left, top); ctx.lineTo(right, top);
+            ctx.moveTo(left, top); ctx.lineTo(left, bottom);
+            ctx.moveTo(right, top); ctx.lineTo(right, bottom);
+            ctx.moveTo(left, bottom); ctx.lineTo(right, bottom); // 一本につなぐ
+            ctx.stroke();
+
+            ctx.clearRect(cx - 12, bottom - 5, 24, 10);
+            drawBattery(cx, bottom);
+
+            ctx.clearRect(bulb1X - 22, top - 22, 44, 44); drawBulb(bulb1X, top, 'ア');
+            ctx.clearRect(bulb2X - 22, top - 22, 44, 44); drawBulb(bulb2X, top, 'イ');
+            ctx.clearRect(bulb3X - 22, top - 22, 44, 44); drawBulb(bulb3X, top, 'ウ');
+
+            if (state.isCurrentMode) {
+                // 端は見切れないように内側へ
+                drawCallout(state.questionTarget === 'total' ? '？ A' : `${state.values.iTotal} A`, left, cy, 70, 0, state.questionTarget === 'total'); 
+                drawCallout(state.questionTarget === '1' ? '？ A' : `${state.values.i1} A`, cx - 90, top, 0, -70, state.questionTarget === '1'); 
+                drawCallout(state.questionTarget === '2' ? '？ A' : `${state.values.i2} A`, cx + 90, top, 0, -70, state.questionTarget === '2'); 
+                drawCallout(state.questionTarget === '3' ? '？ A' : `${state.values.i3} A`, right, cy, -70, 0, state.questionTarget === '3'); 
+            } else {
+                drawVoltageArrow(cx - 50, bottom, cx + 50, bottom, 0, 45, state.questionTarget === 'total' ? '？ V' : `${state.values.vTotal} V`, state.questionTarget === 'total');
+                drawVoltageArrow(bulb1X - 40, top, bulb1X + 40, top, 0, -50, state.questionTarget === '1' ? '？ V' : `${state.values.v1} V`, state.questionTarget === '1');
+                drawVoltageArrow(bulb2X - 40, top, bulb2X + 40, top, 0, -50, state.questionTarget === '2' ? '？ V' : `${state.values.v2} V`, state.questionTarget === '2');
+                drawVoltageArrow(bulb3X - 40, top, bulb3X + 40, top, 0, -50, state.questionTarget === '3' ? '？ V' : `${state.values.v3} V`, state.questionTarget === '3');
+            }
+        }
+
+        function drawParallelCircuit2() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const w = 440; 
+            const h = 340; 
+            const left = cx - w/2;
+            const right = cx + w/2;
+            
+            const y1 = cy - 100; // ア
+            const y2 = cy + 20;  // イ
+            const y3 = cy + 140; // 電源
+
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW;
+            ctx.beginPath();
+            ctx.moveTo(left, y3); ctx.lineTo(left, y1);
+            ctx.moveTo(right, y3); ctx.lineTo(right, y1);
+            ctx.moveTo(left, y1); ctx.lineTo(right, y1); 
+            ctx.moveTo(left, y2); ctx.lineTo(right, y2); 
+            ctx.moveTo(left, y3); ctx.lineTo(right, y3); // 一本につなぐ
+            ctx.stroke();
+
+            ctx.fillStyle = style.lineColor;
+            ctx.beginPath(); ctx.arc(left, y2, style.lineW*1.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(right, y2, style.lineW*1.5, 0, Math.PI*2); ctx.fill();
+
+            ctx.clearRect(cx - 12, y3 - 5, 24, 10);
+            drawBattery(cx, y3);
+
+            ctx.clearRect(cx - 22, y1 - 22, 44, 44); drawBulb(cx, y1, 'ア');
+            ctx.clearRect(cx - 22, y2 - 22, 44, 44); drawBulb(cx, y2, 'イ');
+
+            if (state.isCurrentMode) {
+                // 見切れないように内側に
+                drawCallout(state.questionTarget === 'total' ? '？ A' : `${state.values.iTotal} A`, left, (y2+y3)/2, 80, 0, state.questionTarget === 'total');
+                drawCallout(state.questionTarget === '1' ? '？ A' : `${state.values.i1} A`, left + w/4, y1, 0, -60, state.questionTarget === '1');
+                drawCallout(state.questionTarget === '2' ? '？ A' : `${state.values.i2} A`, left + w/4, y2, 0, -60, state.questionTarget === '2');
+            } else {
+                // 電源の下
+                drawVoltageArrow(cx - 50, y3, cx + 50, y3, 0, 45, state.questionTarget === 'total' ? '？ V' : `${state.values.vTotal} V`, state.questionTarget === 'total');
+                // 電球の上
+                drawVoltageArrow(cx - 40, y1, cx + 40, y1, 0, -50, state.questionTarget === '1' ? '？ V' : `${state.values.v1} V`, state.questionTarget === '1');
+                // 電球イの下（アと被らないように。電池とも被らない）
+                drawVoltageArrow(cx - 40, y2, cx + 40, y2, 0, 45, state.questionTarget === '2' ? '？ V' : `${state.values.v2} V`, state.questionTarget === '2');
+            }
+        }
+
+        function drawParallelCircuit3() {
+            const cx = canvas.width / 2;
+            const cy = canvas.height / 2;
+            const w = 560; 
+            const left = cx - w/2;
+            const right = cx + w/2;
+            
+            const y1 = cy - 100; // 上枝（ア）
+            const y2 = cy + 20;  // 下枝（イ、ウ）
+            const y3 = cy + 140; // 電源
+
+            const bulb2X = cx - 140;
+            const bulb3X = cx + 140;
+
+            ctx.strokeStyle = style.lineColor;
+            ctx.lineWidth = style.lineW;
+            ctx.beginPath();
+            ctx.moveTo(left, y3); ctx.lineTo(left, y1);
+            ctx.moveTo(right, y3); ctx.lineTo(right, y1);
+            ctx.moveTo(left, y1); ctx.lineTo(right, y1); 
+            ctx.moveTo(left, y2); ctx.lineTo(right, y2); 
+            ctx.moveTo(left, y3); ctx.lineTo(right, y3); // 一本につなぐ
+            ctx.stroke();
+
+            ctx.fillStyle = style.lineColor;
+            ctx.beginPath(); ctx.arc(left, y2, style.lineW*1.5, 0, Math.PI*2); ctx.fill();
+            ctx.beginPath(); ctx.arc(right, y2, style.lineW*1.5, 0, Math.PI*2); ctx.fill();
+
+            ctx.clearRect(cx - 12, y3 - 5, 24, 10); drawBattery(cx, y3);
+
+            ctx.clearRect(cx - 22, y1 - 22, 44, 44); drawBulb(cx, y1, 'ア');
+            ctx.clearRect(bulb2X - 22, y2 - 22, 44, 44); drawBulb(bulb2X, y2, 'イ');
+            ctx.clearRect(bulb3X - 22, y2 - 22, 44, 44); drawBulb(bulb3X, y2, 'ウ');
+
+            if (state.isCurrentMode) {
+                // 見切れないように
+                drawCallout(state.questionTarget === 'total' ? '？ A' : `${state.values.iTotal} A`, left, (y2+y3)/2, 80, 0, state.questionTarget === 'total');
+                drawCallout(state.questionTarget === '1' ? '？ A' : `${state.values.i1} A`, cx - 120, y1, 0, -50, state.questionTarget === '1');
+                drawCallout(state.questionTarget === '2' ? '？ A' : `${state.values.i2} A`, bulb2X + 70, y2, 0, -50, state.questionTarget === '2');
+                drawCallout(state.questionTarget === '3' ? '？ A' : `${state.values.i3} A`, right - 60, y2, 0, -50, state.questionTarget === '3');
+            } else {
+                drawVoltageArrow(cx - 50, y3, cx + 50, y3, 0, 45, state.questionTarget === 'total' ? '？ V' : `${state.values.vTotal} V`, state.questionTarget === 'total');
+                drawVoltageArrow(cx - 40, y1, cx + 40, y1, 0, -50, state.questionTarget === '1' ? '？ V' : `${state.values.v1} V`, state.questionTarget === '1');
+                // イとウの電圧は下側に表示
+                drawVoltageArrow(bulb2X - 40, y2, bulb2X + 40, y2, 0, 45, state.questionTarget === '2' ? '？ V' : `${state.values.v2} V`, state.questionTarget === '2');
+                drawVoltageArrow(bulb3X - 40, y2, bulb3X + 40, y2, 0, 45, state.questionTarget === '3' ? '？ V' : `${state.values.v3} V`, state.questionTarget === '3');
+            }
+        }
+
+        function draw() {
+            // キャンバスをクリア
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            if (state.isSeries) {
+                if (state.bulbCount === 2) drawSeriesCircuit2();
+                else drawSeriesCircuit3();
+            } else {
+                if (state.bulbCount === 2) drawParallelCircuit2();
+                else drawParallelCircuit3();
+            }
+        }
+
+        // 直列ボタンクリック
+        btnSeries.addEventListener('click', () => {
+            if (!state.isSeries) {
+                state.isSeries = true;
+                updateCircuitButtons();
+                generateProblem();
+            }
+        });
+
+        // 並列ボタンクリック
+        btnParallel.addEventListener('click', () => {
+            if (state.isSeries) {
+                state.isSeries = false;
+                updateCircuitButtons();
+                generateProblem();
+            }
+        });
+
+        function updateCircuitButtons() {
+            if (state.isSeries) {
+                btnSeries.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-blue-500 text-white shadow-md transform scale-105";
+                btnParallel.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300";
+            } else {
+                btnParallel.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-indigo-500 text-white shadow-md transform scale-105";
+                btnSeries.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300";
+            }
+        }
+
+        // 電流モードボタンクリック
+        btnModeCurrent.addEventListener('click', () => {
+            if (!state.isCurrentMode) {
+                state.isCurrentMode = true;
+                updateModeButtons();
+                generateProblem();
+            }
+        });
+
+        // 電圧モードボタンクリック
+        btnModeVoltage.addEventListener('click', () => {
+            if (state.isCurrentMode) {
+                state.isCurrentMode = false;
+                updateModeButtons();
+                generateProblem();
+            }
+        });
+
+        function updateModeButtons() {
+            if (state.isCurrentMode) {
+                btnModeCurrent.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-orange-500 text-white shadow-md transform scale-105";
+                btnModeVoltage.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300";
+            } else {
+                btnModeVoltage.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 bg-purple-500 text-white shadow-md transform scale-105";
+                btnModeCurrent.className = "px-6 py-3 text-xl font-bold rounded-full transition duration-300 w-40 text-gray-500 hover:text-gray-800 hover:bg-gray-300";
+            }
+        }
+
+        // 問題生成ボタン
+        btnGenerate.addEventListener('click', () => {
+            // ボタンアニメーション
+            btnGenerate.classList.add('scale-95');
+            setTimeout(() => btnGenerate.classList.remove('scale-95'), 150);
+            generateProblem();
+        });
+        
+        // ランダム出題ボタン群の処理
+        function animateButton(btn) {
+            btn.classList.add('scale-95');
+            setTimeout(() => btn.classList.remove('scale-95'), 150);
+        }
+
+        btnRandCurrent.addEventListener('click', () => {
+            animateButton(btnRandCurrent);
+            state.isCurrentMode = true; // 電流固定
+            state.isSeries = Math.random() < 0.5; // 直列・並列は50%
+            updateModeButtons();
+            updateCircuitButtons();
+            generateProblem();
+        });
+
+        btnRandVoltage.addEventListener('click', () => {
+            animateButton(btnRandVoltage);
+            state.isCurrentMode = false; // 電圧固定
+            state.isSeries = Math.random() < 0.5; // 直列・並列は50%
+            updateModeButtons();
+            updateCircuitButtons();
+            generateProblem();
+        });
+
+        btnRandAll.addEventListener('click', () => {
+            animateButton(btnRandAll);
+            state.isCurrentMode = Math.random() < 0.5; // 電流・電圧も50%
+            state.isSeries = Math.random() < 0.5; // 直列・並列も50%
+            updateModeButtons();
+            updateCircuitButtons();
+            generateProblem();
+        });
+
+        // 豆電球3個モードのトグルスイッチ
+        toggle3Bulbs.addEventListener('change', (e) => {
+            state.allow3Bulbs = e.target.checked;
+            toggle3BulbsText.textContent = state.allow3Bulbs ? 'ON' : 'OFF';
+            toggle3BulbsText.classList.toggle('text-green-600', state.allow3Bulbs);
+            toggle3BulbsText.classList.toggle('text-gray-500', !state.allow3Bulbs);
+            generateProblem();
+        });
+
+        // 答え合わせボタン
+        btnCheck.addEventListener('click', () => {
+            const userAnsStr = inputAnswer.value;
+            if (userAnsStr === '') {
+                feedbackText.textContent = '数字を入力してね！';
+                feedbackText.classList.replace('text-green-500', 'text-red-500');
+                return;
+            }
+
+            const userAns = parseFloat(userAnsStr);
+            // 浮動小数点の比較のための許容誤差
+            const epsilon = 0.01; 
+
+            if (Math.abs(userAns - state.answerValue) < epsilon) {
+                // 正解
+                feedbackText.textContent = '';
+                // 正解オーバーレイを表示
+                const unit = state.isCurrentMode ? 'A' : 'V';
+                answerDetail.innerHTML = `正解は <strong>${state.answerValue} ${unit}</strong> です。<br>よくできました！`;
+                answerOverlay.classList.remove('hidden');
+                
+                // 少し時間をおいて次の問題を促すなら自動生成も可だが、ここでは手動にする
+            } else {
+                // 不正解
+                feedbackText.textContent = 'ざんねん！もういちど計算してみよう。';
+                feedbackText.classList.replace('text-green-500', 'text-red-500');
+                
+                // 入力欄を揺らすアニメーション
+                inputAnswer.classList.add('animate-pulse', 'border-red-500');
+                setTimeout(() => {
+                    inputAnswer.classList.remove('animate-pulse', 'border-red-500');
+                }, 1000);
+            }
+        });
+
+        // オーバーレイを閉じるボタン
+        btnCloseOverlay.addEventListener('click', () => {
+            answerOverlay.classList.add('hidden');
+            // 閉じたら自動で次の問題へ
+            generateProblem();
+        });
+
+        // Enterキーで答え合わせ
+        inputAnswer.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                btnCheck.click();
+            }
+        });
+
+        // 起動時に最初の問題を生成して描画
+        window.onload = () => {
+            generateProblem();
+        };
+
+    </script>
+</body>
 </html>
