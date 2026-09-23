@@ -80,6 +80,22 @@
             </button>
         </div>
 
+        <!-- ランダム出題モード -->
+        <div class="flex flex-col items-center mb-6 w-full fade-in border-t border-gray-200 pt-4">
+            <span class="text-sm font-bold text-gray-500 mb-3">＼ ランダム出題モード ／</span>
+            <div class="flex flex-wrap justify-center gap-4 w-full">
+                <button id="btnRandCurrent" class="px-4 py-2 bg-orange-100 text-orange-700 font-bold rounded-xl btn-hover transition duration-300 shadow border-2 border-orange-300">
+                    電流ランダム
+                </button>
+                <button id="btnRandVoltage" class="px-4 py-2 bg-purple-100 text-purple-700 font-bold rounded-xl btn-hover transition duration-300 shadow border-2 border-purple-300">
+                    電圧ランダム
+                </button>
+                <button id="btnRandAll" class="px-4 py-2 bg-pink-100 text-pink-700 font-bold rounded-xl btn-hover transition duration-300 shadow border-2 border-pink-300">
+                    電流・電圧ランダム
+                </button>
+            </div>
+        </div>
+
         <!-- 豆電球3個モード トグルスイッチ -->
         <div class="flex items-center justify-center gap-3 mb-6 w-full fade-in">
             <span class="text-lg font-bold text-gray-700">豆電球3個モード:</span>
@@ -138,6 +154,9 @@
         const btnModeCurrent = document.getElementById('btnModeCurrent');
         const btnModeVoltage = document.getElementById('btnModeVoltage');
         const btnGenerate = document.getElementById('btnGenerate');
+        const btnRandCurrent = document.getElementById('btnRandCurrent');
+        const btnRandVoltage = document.getElementById('btnRandVoltage');
+        const btnRandAll = document.getElementById('btnRandAll');
         const btnCheck = document.getElementById('btnCheck');
         const inputAnswer = document.getElementById('inputAnswer');
         const statusText = document.getElementById('statusText');
@@ -729,6 +748,39 @@
             generateProblem();
         });
         
+        // ランダム出題ボタン群の処理
+        function animateButton(btn) {
+            btn.classList.add('scale-95');
+            setTimeout(() => btn.classList.remove('scale-95'), 150);
+        }
+
+        btnRandCurrent.addEventListener('click', () => {
+            animateButton(btnRandCurrent);
+            state.isCurrentMode = true; // 電流固定
+            state.isSeries = Math.random() < 0.5; // 直列・並列は50%
+            updateModeButtons();
+            updateCircuitButtons();
+            generateProblem();
+        });
+
+        btnRandVoltage.addEventListener('click', () => {
+            animateButton(btnRandVoltage);
+            state.isCurrentMode = false; // 電圧固定
+            state.isSeries = Math.random() < 0.5; // 直列・並列は50%
+            updateModeButtons();
+            updateCircuitButtons();
+            generateProblem();
+        });
+
+        btnRandAll.addEventListener('click', () => {
+            animateButton(btnRandAll);
+            state.isCurrentMode = Math.random() < 0.5; // 電流・電圧も50%
+            state.isSeries = Math.random() < 0.5; // 直列・並列も50%
+            updateModeButtons();
+            updateCircuitButtons();
+            generateProblem();
+        });
+
         // 豆電球3個モードのトグルスイッチ
         toggle3Bulbs.addEventListener('change', (e) => {
             state.allow3Bulbs = e.target.checked;
